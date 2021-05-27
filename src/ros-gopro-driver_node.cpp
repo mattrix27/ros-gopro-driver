@@ -89,17 +89,21 @@ int main(int argc, char* argv[])
     avformat_network_init();
 
     //Open video stream
+    ROS_INFO_STREAM("OPENING VIDEO STREAM");
     if(avformat_open_input(&format_ctx, gopro_url.c_str(), NULL, NULL) !=0)
     {
         return EXIT_FAILURE;
     }
 
     //Check stream info
+    ROS_INFO_STREAM(format_ctx);
+    ROS_INFO_STREAM("CHECKING STREAM INFO");
     if(avformat_find_stream_info(format_ctx, NULL) < 0)
     {
         return EXIT_FAILURE;
     }
 
+    ROS_INFO_STREAM("SEARCH FOR VIDEO STREAM");
     //Search for the video stream
     for(int i=0; i < format_ctx->nb_streams; i++)
     {
@@ -121,9 +125,11 @@ int main(int argc, char* argv[])
     unsigned long cnt = 0;
 
     //Start reading packets from stream and write them to file
+    ROS_INFO_STREAM("START READING PACKETS");
     av_read_play(format_ctx);
 
     //Get the codec
+    ROS_INFO_STREAM("GET CODEC");
     AVCodec* codec = NULL;
     codec = avcodec_find_decoder(AV_CODEC_ID_H264);
     //codec = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
@@ -143,10 +149,12 @@ int main(int argc, char* argv[])
     std::ofstream output_file;
 
     //Open codec, exit if failure
+    ROS_INFO_STREAM("OPEN CODEC");
     if(avcodec_open2(codec_ctx, codec, NULL) < 0)
         return EXIT_FAILURE;
 
     //Get the frame context to convert
+    ROS_INFO_STREAM("GET FRAME CONTEXT");
     img_convert_ctx = sws_getContext(codec_ctx->width, codec_ctx->height, codec_ctx->pix_fmt, codec_ctx->width, codec_ctx->height, AV_PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL, NULL);
 
     //Get the original frame size in bytes
@@ -168,6 +176,7 @@ int main(int argc, char* argv[])
     uint8_t* picture_buffer_2 = (uint8_t*)(av_malloc(size2));
 
     //Fill out the containers
+    ROS_INFO_STREAM("FILL CONTAINERS");
     avpicture_fill((AVPicture*) picture, picture_buffer, AV_PIX_FMT_YUV420P, codec_ctx->width, codec_ctx->height);
     avpicture_fill((AVPicture*) picture_rgb, picture_buffer_2, AV_PIX_FMT_BGR24, codec_ctx->width, codec_ctx->height);
 
@@ -207,7 +216,7 @@ int main(int argc, char* argv[])
 
                 //Decode video
                 int result = avcodec_decode_video2(codec_ctx, picture, &check, &packet);
-                ROS_INFO_STREAM("Frame: " << cnt << " Bytes decoded " << result << " check " << check << std::endl); 
+                //ROS_INFO_STREAM("Frame: " << cnt << " Bytes decoded " << result << " check " << check << std::endl); 
 
                 //Scale the image
                 sws_scale(img_convert_ctx, picture->data, picture->linesize, 0, codec_ctx->height, picture_rgb->data, picture_rgb->linesize);

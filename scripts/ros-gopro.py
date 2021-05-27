@@ -33,6 +33,8 @@ class GOPRO_LIVE_MON(object):
         thread = threading.Thread(target=self.run, args=(url,))
         thread.daemon = True
         thread.start()
+        self.reset_to_video = False
+        self.first_loop = False
 
     def run(self, URL):
         # Create publisher
@@ -48,10 +50,24 @@ class GOPRO_LIVE_MON(object):
                 msg = Empty()
                 p_live.publish(msg)
             time.sleep(10)
+            if (not self.reset_to_video):
+                if (self.first_loop):
+                    self.first_loop = False
+                else:
+                    video_command_url = "http://10.5.5.9/gp/gpControl/command/mode?p=0"
+                    rospy.loginfo("Signal sent to " + video_command_url)
+                    PARAMS = {}
+                    r = requests.get(url = video_command_url, params = PARAMS)                    
+                    self.reset_to_video = True
 
 
 # Init function
 def init():
+    setting_command_url = "http://10.5.5.9/gp/gpControl/command/mode?p=5"
+    rospy.loginfo("Signal sent to " + setting_command_url)
+    PARAMS = {}
+    r = requests.get(url = setting_command_url, params = PARAMS)
+
     rospy.init_node('gopro_node', anonymous=True)
     rospy.loginfo("Starting gopro node: " + rospy.get_name() + "...\n")
     # Getting Parameters
